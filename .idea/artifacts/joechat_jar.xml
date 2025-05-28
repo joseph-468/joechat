@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="joechat:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/joechat_jar</output-path>
+    <root id="archive" name="joechat.jar">
+      <element id="module-output" name="joechat" />
+    </root>
+  </artifact>
+</component>
