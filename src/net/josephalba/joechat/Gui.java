@@ -21,7 +21,8 @@ public class Gui {
         // Default look and feel is acceptable if this fails
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception _) {}
+        }
+        catch (Exception ignored) {}
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setResizable(false);
