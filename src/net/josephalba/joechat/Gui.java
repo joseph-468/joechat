@@ -6,10 +6,17 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
 public class Gui {
+    public final boolean headless;
     public JTextArea textArea;
-    private final JFrame frame;
+    private JFrame frame;
 
-    public Gui(String version) {
+    public Gui(String version, boolean headless) {
+        this.headless = headless;
+        if (headless) {
+            Server server = new Server(this);
+            server.start();
+            return;
+        }
         frame = new JFrame("JoeChat " + version);
         // Default look and feel is acceptable if this fails
         try {
@@ -24,6 +31,7 @@ public class Gui {
     }
 
     public void startMainMenu() {
+        if (headless) return;
         SwingUtilities.invokeLater(() -> {
             resetFrame();
 
@@ -48,6 +56,7 @@ public class Gui {
     }
 
     public void startServerMainMenu(Server server) {
+        if (headless) return;
         SwingUtilities.invokeLater(() -> {
             resetFrame();
 
@@ -69,6 +78,7 @@ public class Gui {
     }
 
     public void startClientMainMenu() {
+        if (headless) return;
         SwingUtilities.invokeLater(() -> {
             FocusListener removeTextOnFocus = new FocusListener() {
                 public void focusGained(FocusEvent e) {
@@ -116,6 +126,7 @@ public class Gui {
     }
 
     public void startClientChatMenu(Client client) {
+        if (headless) return;
         SwingUtilities.invokeLater(() -> {
             resetFrame();
 
@@ -146,6 +157,7 @@ public class Gui {
     }
 
     public void showError(String error) {
+        if (headless) return;
         SwingUtilities.invokeLater(() -> {
             resetFrame();
 

@@ -81,12 +81,14 @@ class ClientInputThread extends Thread {
                     e.printStackTrace();
                     return;
                 }
-                JTextArea textArea = gui.textArea;
-                String text = textArea.getText();
-                text = text.concat("\n");
-                text = text.concat(received);
-                textArea.setText(text);
-                textArea.setCaretPosition(textArea.getDocument().getLength());
+                if (!gui.headless) {
+                    JTextArea textArea = gui.textArea;
+                    String text = textArea.getText();
+                    text = text.concat("\n");
+                    text = text.concat(received);
+                    textArea.setText(text);
+                    textArea.setCaretPosition(textArea.getDocument().getLength());
+                }
             }
         }
     }
