@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class Client extends Thread {
@@ -29,8 +30,9 @@ public class Client extends Thread {
                       System.getProperty("java.version");
         id = Math.abs(temp.hashCode());
 
+        socket = new Socket();
         try {
-            socket = new Socket(InetAddress.getByName(address), Main.PORT);
+            socket.connect(new InetSocketAddress(address, Main.PORT), 250); // Timeout in ms
         } catch (Exception e) {
             gui.showError("Could not connect to server");
             return;
