@@ -14,6 +14,7 @@ public class Client extends Thread {
     public ClientOutputThread outputThread;
     public ClientInputThread inputThread;
     public Gui gui;
+    public int id;
 
     public Client(Gui gui, String username, String address) {
         this.gui = gui;
@@ -22,6 +23,13 @@ public class Client extends Thread {
     }
 
     public void run() {
+        String temp = System.getProperty("os.name") +
+                      System.getProperty("os.version") +
+                      System.getProperty("os.arch") +
+                      System.getProperty("user.name") +
+                      System.getProperty("java.version");
+        id = Math.abs(temp.hashCode());
+
         try {
             socket = new Socket(InetAddress.getByName(address), Main.PORT);
         } catch (IOException e) {

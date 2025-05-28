@@ -88,7 +88,7 @@ public class Gui extends Thread {
         JLabel usernameLabel = new JLabel("Username");
         usernameLabel.setBounds(150, 150, 200, 50);
         usernameLabel.setHorizontalAlignment(JLabel.CENTER);
-        JTextField usernameField = new JTextField("user #" + (int) (Math.random() * 100000));
+        JTextField usernameField = new JTextField("user");
         usernameField.setBounds(150, 200, 200, 50);
         usernameField.addFocusListener(removeTextOnFocus);
 
@@ -118,7 +118,7 @@ public class Gui extends Thread {
         messageBox.setBounds(150, 400, 400, 50);
         messageBox.addActionListener(e -> {
             synchronized (client.outputThread) {
-                client.outputThread.message = client.username + ": " + messageBox.getText();
+                client.outputThread.message = client.username + " #" + client.id + ": " + messageBox.getText();
                 client.outputThread.notify();
             }
         });

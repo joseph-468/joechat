@@ -2,7 +2,7 @@ package net.josephalba.joechat;
 
 public class Main {
     public static final int PORT = 8046;
-    public static final String VERSION = "v0.1.0"; // Temporary solution
+    public static final String VERSION = "v0.2.0"; // Temporary solution
 
     public static void main(String[] args) {
         for (String arg : args) {
