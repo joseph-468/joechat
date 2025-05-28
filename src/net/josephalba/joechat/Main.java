@@ -1,10 +1,18 @@
 package net.josephalba.joechat;
 
+import javax.swing.*;
+
 public class Main {
     public static final int PORT = 8046;
-    public static final String VERSION = "v0.2.0"; // Temporary solution
+    public static final String VERSION = "v0.2.1";
 
     public static void main(String[] args) {
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            System.err.println("Uncaught exception in thread " + thread.getName());
+            throwable.printStackTrace();
+            System.exit(1);
+        });
+
         for (String arg : args) {
             switch (arg) {
                 case "--help" -> {
@@ -21,7 +29,8 @@ public class Main {
             }
         }
 
-        Gui gui = new Gui(VERSION);
-        gui.start();
+        SwingUtilities.invokeLater(() -> {
+            Gui gui = new Gui(VERSION);
+        });
     }
 }

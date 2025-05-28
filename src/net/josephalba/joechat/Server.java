@@ -1,31 +1,45 @@
 package net.josephalba.joechat;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
 public class Server extends Thread {
+    // Items in the array list are never removed. Need to fix
     public ArrayList<ServerInputThread> inputThreads = new ArrayList<>();
     public ArrayList<ServerOutputThread> outputThreads = new ArrayList<>();
+    public Gui gui;
+
+    Server(Gui gui) {
+       this.gui = gui;
+    }
 
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(Main.PORT)) {
-            while (true) {
-                Socket socket = serverSocket.accept();
-                ServerInputThread inputThread = new ServerInputThread(this, socket);
-                ServerOutputThread outputThread = new ServerOutputThread( socket);
-                inputThreads.add(inputThread);
-                outputThreads.add(outputThread);
-                inputThread.start();
-                outputThread.start();
-            }
-
-            //serverSocket.close();
+        ServerSocket serverSocket;
+        try {
+            serverSocket = new ServerSocket(Main.PORT);
         }
         catch (Exception e) {
             e.printStackTrace();
+            gui.showError("Failed to start server");
+            return;
+        }
+        while (true) {
+            Socket socket;
+            try {
+                socket = serverSocket.accept();
+            } catch (Exception e) {
+                e.printStackTrace();
+                gui.showError("Failed to accept connection");
+                return;
+            }
+            ServerInputThread inputThread = new ServerInputThread(gui, this, socket);
+            ServerOutputThread outputThread = new ServerOutputThread(gui, socket);
+            inputThreads.add(inputThread);
+            outputThreads.add(outputThread);
+            inputThread.start();
+            outputThread.start();
         }
     }
 }
@@ -33,29 +47,39 @@ public class Server extends Thread {
 class ServerInputThread extends Thread {
     private final Socket socket;
     private final Server server;
+    private final Gui gui;
 
-    ServerInputThread(Server server, Socket socket) {
+    ServerInputThread(Gui gui, Server server, Socket socket) {
+        this.gui = gui;
         this.socket = socket;
         this.server = server;
     }
 
     public void run() {
+        DataInputStream inputStream;
         try {
-            DataInputStream inputStream = new DataInputStream(socket.getInputStream());
-
-            String message;
-            while (true) {
-                message = inputStream.readUTF();
-                for (ServerOutputThread outputThread : server.outputThreads) {
-                    synchronized (outputThread) {
-                        outputThread.message = message;
-                        outputThread.notify();
-                    }
-                }
-            }
+            inputStream = new DataInputStream(socket.getInputStream());
         }
         catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+
+        String message;
+        while (true) {
+            try {
+                message = inputStream.readUTF();
+            }
+            catch (Exception e) {
+                // User has left. Needs to be handled better
+                e.printStackTrace();
+                return;
+            }
+            for (ServerOutputThread outputThread : server.outputThreads) {
+                synchronized (outputThread) {
+                    outputThread.message = message;
+                    outputThread.notify();
+                }
+            }
         }
     }
 }
@@ -63,13 +87,15 @@ class ServerInputThread extends Thread {
 class ServerOutputThread extends Thread {
     private DataOutputStream outputStream;
     public String message = "";
+    private final Gui gui;
 
-    ServerOutputThread(Socket socket) {
+    ServerOutputThread(Gui gui, Socket socket) {
+        this.gui = gui;
         try {
             outputStream = new DataOutputStream(socket.getOutputStream());
         }
         catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -78,14 +104,18 @@ class ServerOutputThread extends Thread {
             while (true) {
                 try {
                     wait();
-                    try {
-                        outputStream.writeUTF(message);
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                } catch (InterruptedException e) {
+                }
+                catch (Exception e) {
                     e.printStackTrace();
+                }
+
+                try {
+                    outputStream.writeUTF(message);
+                }
+                catch (Exception e) {
+                    // User has left. Needs to be handled better
+                    e.printStackTrace();
+                    return;
                 }
             }
         }
