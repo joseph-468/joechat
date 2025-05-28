@@ -41,6 +41,8 @@ public class Client extends Thread {
         inputThread.start();
         outputThread.start();
 
+        gui.startClientChatMenu(this);
+
         synchronized (this) {
             try {
                 wait();

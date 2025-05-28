@@ -113,7 +113,6 @@ public class Gui {
                 if (username.isEmpty() || username.length() > 16) return;
                 Client client = new Client(this, username, addressField.getText());
                 client.start();
-                startClientChatMenu(client);
             });
 
             frame.add(addressLabel);
