@@ -22,7 +22,7 @@ public class Gui {
         frame = new JFrame("JoeChat " + version);
         // Default look and feel is acceptable if this fails
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         }
         catch (Exception ignored) {}
 
