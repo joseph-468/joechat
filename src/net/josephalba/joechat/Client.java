@@ -5,6 +5,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Client extends Thread {
     public final String username;
@@ -84,11 +88,21 @@ class ClientInputThread extends Thread {
                     e.printStackTrace();
                     return;
                 }
+
                 if (!gui.headless) {
+                    String timestampString = received.substring(0, received.indexOf("Z") + 1);
+                    Instant timestamp = Instant.parse(timestampString);
+                    ZonedDateTime zonedTimestamp = ZonedDateTime.ofInstant(timestamp, ZoneId.systemDefault());
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+                    String formattedTimestamp = formatter.format(zonedTimestamp);
+
+                    String messageContent = received.substring(received.indexOf("Z") + 1);
+                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(messageContent);
+
                     JTextArea textArea = gui.textArea;
                     String text = textArea.getText();
                     text = text.concat("\n");
-                    text = text.concat(received);
+                    text = text.concat(formattedMessage);
                     textArea.setText(text);
                     textArea.setCaretPosition(textArea.getDocument().getLength());
                 }
@@ -127,6 +141,7 @@ class ClientOutputThread extends Thread {
 
                 try {
                     outputStream.writeUTF(message);
+                    outputStream.flush();
                 }
                 catch (Exception e) {
                     e.printStackTrace();
