@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class Gui {
     public final boolean headless;
@@ -23,6 +25,14 @@ public class Gui {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         }
         catch (Exception ignored) {}
+
+        // Ensures clicking somewhere else removes focus from component
+        frame.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+            }
+        });
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
         frame.setResizable(false);
@@ -83,11 +93,22 @@ public class Gui {
         SwingUtilities.invokeLater(() -> {
             FocusListener removeTextOnFocus = new FocusListener() {
                 public void focusGained(FocusEvent e) {
-                    JTextField field = (JTextField) e.getSource();
-                    field.setText("");
+                    final JTextField field = (JTextField) e.getSource();
+                    final String defaultText = (String) field.getClientProperty("defaultText");
+
+                    if (field.getText().equals(defaultText)) {
+                        field.setText("");
+                    }
                 }
 
-                public void focusLost(FocusEvent e) {}
+                public void focusLost(FocusEvent e) {
+                    final JTextField field = (JTextField) e.getSource();
+                    final String defaultText = (String) field.getClientProperty("defaultText");
+
+                    if (field.getText().isEmpty()) {
+                        field.setText(defaultText);
+                    }
+                }
             };
 
             resetFrame();
@@ -96,6 +117,7 @@ public class Gui {
             addressLabel.setBounds(450, 150, 200, 50);
             addressLabel.setHorizontalAlignment(JLabel.CENTER);
             JTextField addressField = new JTextField("localhost");
+            addressField.putClientProperty("defaultText", "localhost");
             addressField.setBounds(450, 200, 200, 50);
             addressField.addFocusListener(removeTextOnFocus);
 
@@ -103,6 +125,7 @@ public class Gui {
             usernameLabel.setBounds(150, 150, 200, 50);
             usernameLabel.setHorizontalAlignment(JLabel.CENTER);
             JTextField usernameField = new JTextField("user");
+            usernameField.putClientProperty("defaultText", "user");
             usernameField.setBounds(150, 200, 200, 50);
             usernameField.addFocusListener(removeTextOnFocus);
 
@@ -137,6 +160,7 @@ public class Gui {
                     client.outputThread.message = client.username + " #" + client.id + ": " + messageBox.getText();
                     client.outputThread.notify();
                 }
+                messageBox.setText("");
             });
             frame.add(messageBox);
 

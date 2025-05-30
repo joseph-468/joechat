@@ -3,7 +3,6 @@ package net.josephalba.joechat;
 import javax.swing.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
