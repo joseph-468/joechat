@@ -2,10 +2,7 @@ package net.josephalba.joechat;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 
 public class Gui {
     public final boolean headless;
@@ -25,6 +22,8 @@ public class Gui {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         }
         catch (Exception ignored) {}
+
+        setDefaultFont("Monospaced", Font.PLAIN, 14);
 
         // Ensures clicking somewhere else removes focus from component
         frame.addMouseListener(new MouseAdapter() {
@@ -154,8 +153,30 @@ public class Gui {
             resetFrame();
 
             JTextField messageBox = new JTextField();
-            messageBox.setBounds(150, 400, 400, 50);
+            messageBox.setBounds(2, 520, 700, 40);
+            messageBox.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+
+            // By requesting focus typing always goes into the message box
+            messageBox.addFocusListener(new FocusAdapter() {
+                public void focusLost(FocusEvent e) {
+                    SwingUtilities.invokeLater(messageBox::requestFocusInWindow);
+                }
+            });
+
             messageBox.addActionListener(e -> {
+                synchronized (client.outputThread) {
+                    client.outputThread.message = client.username + " " + client.id + ": " + messageBox.getText();
+                    client.outputThread.notify();
+                }
+                messageBox.setText("");
+            });
+            frame.add(messageBox);
+            messageBox.requestFocusInWindow();
+
+            JButton chatSendButton = new JButton("Send");
+            chatSendButton.setBounds(702, 520, 80, 40);
+            chatSendButton.setFont(chatSendButton.getFont().deriveFont(Font.BOLD));
+            chatSendButton.addActionListener(e -> {
                 synchronized (client.outputThread) {
                     // Non-blocking spaces are used here so line wrapping can utilize more space
                     client.outputThread.message = client.username + " #" + client.id + ": " + messageBox.getText();
@@ -163,18 +184,21 @@ public class Gui {
                 }
                 messageBox.setText("");
             });
-            frame.add(messageBox);
+            frame.add(chatSendButton);
 
             chatPane = new JTextPane();
             chatPane.setEditable(false);
+            chatPane.setHighlighter(null);
 
-            JScrollPane scrollPane = new JScrollPane(chatPane);
-            scrollPane.setBounds(150, 50, 400, 300);
+            JScrollPane chatScrollPane = new JScrollPane(chatPane);
+            chatScrollPane.setBounds(0, 0, 800, 520);
+            chatScrollPane.setBorder(null);
+            chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-            frame.getContentPane().add(scrollPane);
+            frame.getContentPane().add(chatScrollPane);
 
             updateFrame();
-
         });
     }
 
@@ -203,6 +227,15 @@ public class Gui {
             updateFrame();
         });
     }
+
+    private void setDefaultFont(String name, int style, int size) {
+        Font font = new Font(name, style, size);
+
+        UIManager.put("Button.font", font);
+        UIManager.put("TextPane.font", font);
+        UIManager.put("TextField.font", font);
+    }
+
 
     private void resetFrame() {
         frame.getContentPane().removeAll();

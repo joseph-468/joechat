@@ -95,8 +95,7 @@ class ClientInputThread extends Thread {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                     String formattedTimestamp = formatter.format(zonedTimestamp);
 
-                    // Non-blocking spaces are used here so line wrapping can utilize more space
-                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(message);
+                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(message);
 
                     gui.updateChatMessages(formattedMessage);
                 }
