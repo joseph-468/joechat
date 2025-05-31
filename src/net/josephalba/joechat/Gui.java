@@ -152,6 +152,19 @@ public class Gui {
         SwingUtilities.invokeLater(() -> {
             resetFrame();
 
+            JButton exitButton = new JButton("Exit");
+            exitButton.setBounds(5, 5, 80, 40);
+            exitButton.addActionListener(e -> {
+                client.close();
+                startMainMenu();
+            });
+            frame.add(exitButton);
+
+            JLabel addressLabel = new JLabel("You are connected to: ".concat(client.address));
+            addressLabel.setFont(addressLabel.getFont().deriveFont(Font.PLAIN, 16));
+            addressLabel.setBounds(100, 0, 500, 50);
+            frame.add(addressLabel);
+
             JTextField messageBox = new JTextField();
             messageBox.setBounds(2, 520, 700, 40);
             messageBox.setBorder(BorderFactory.createLineBorder(Color.GRAY));
@@ -191,7 +204,7 @@ public class Gui {
             chatPane.setHighlighter(null);
 
             JScrollPane chatScrollPane = new JScrollPane(chatPane);
-            chatScrollPane.setBounds(0, 0, 800, 520);
+            chatScrollPane.setBounds(0, 50, 800, 470);
             chatScrollPane.setBorder(null);
             chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -234,6 +247,7 @@ public class Gui {
         UIManager.put("Button.font", font);
         UIManager.put("TextPane.font", font);
         UIManager.put("TextField.font", font);
+        UIManager.put("Label.font", font);
     }
 
 

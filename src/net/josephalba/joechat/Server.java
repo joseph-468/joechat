@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 
 public class Server extends Thread {
-    // Items in the array list are never removed. Need to fix
     public ArrayList<ServerInputThread> inputThreads = new ArrayList<>();
     public ArrayList<ServerOutputThread> outputThreads = new ArrayList<>();
     public Gui gui;
@@ -36,7 +35,7 @@ public class Server extends Thread {
                 return;
             }
             ServerInputThread inputThread = new ServerInputThread(gui, this, socket);
-            ServerOutputThread outputThread = new ServerOutputThread(gui, socket);
+            ServerOutputThread outputThread = new ServerOutputThread(gui, this, socket);
             inputThreads.add(inputThread);
             outputThreads.add(outputThread);
             inputThread.start();
@@ -71,7 +70,13 @@ class ServerInputThread extends Thread {
                 message = inputStream.readUTF();
             }
             catch (Exception e) {
-                // User has left. Needs to be handled better
+                synchronized(server) {
+                    int i = server.inputThreads.indexOf(this);
+                    if (i != -1) {
+                        server.inputThreads.remove(i);
+                        server.outputThreads.remove(i);
+                    }
+                }
                 e.printStackTrace();
                 return;
             }
@@ -87,11 +92,14 @@ class ServerInputThread extends Thread {
 
 class ServerOutputThread extends Thread {
     private DataOutputStream outputStream;
+    private final Server server;
     public String message = "";
     private final Gui gui;
 
-    ServerOutputThread(Gui gui, Socket socket) {
+    ServerOutputThread(Gui gui, Server server, Socket socket) {
         this.gui = gui;
+        this.server = server;
+
         try {
             outputStream = new DataOutputStream(socket.getOutputStream());
         }
@@ -118,7 +126,13 @@ class ServerOutputThread extends Thread {
                     outputStream.flush();
                 }
                 catch (Exception e) {
-                    // User has left. Needs to be handled better
+                    synchronized(server) {
+                        int i = server.inputThreads.indexOf(this);
+                        if (i != -1) {
+                            server.inputThreads.remove(i);
+                            server.outputThreads.remove(i);
+                        }
+                    }
                     e.printStackTrace();
                     return;
                 }

@@ -56,11 +56,24 @@ public class Client extends Thread {
             }
         }
     }
+
+    public void close() {
+        inputThread.running = false;
+        try {
+            socket.close();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        outputThread.running = false;
+        outputThread.interrupt();
+    }
 }
 
 class ClientInputThread extends Thread {
     private final Socket socket;
     public Gui gui;
+    public volatile boolean running;
 
     public ClientInputThread(Gui gui, Socket socket, String username, String address) {
         this.gui = gui;
@@ -68,6 +81,7 @@ class ClientInputThread extends Thread {
     }
 
     public void run() {
+        running = true;
         DataInputStream inputStream;
         try {
             inputStream = new DataInputStream(socket.getInputStream());
@@ -85,8 +99,10 @@ class ClientInputThread extends Thread {
                     message = inputStream.readUTF();
                 }
                 catch (Exception e) {
-                    gui.showError("Lost connection to server");
-                    e.printStackTrace();
+                    if (running) {
+                        gui.showError("Lost connection to server");
+                        e.printStackTrace();
+                    }
                     return;
                 }
 
@@ -107,12 +123,14 @@ class ClientInputThread extends Thread {
 class ClientOutputThread extends Thread {
     private final Socket socket;
     public String message = "";
+    public volatile boolean running;
 
     public ClientOutputThread(Socket socket) {
         this.socket = socket;
     }
 
     public void run() {
+        running = true;
         DataOutputStream outputStream;
         try {
             outputStream = new DataOutputStream(socket.getOutputStream());
@@ -127,7 +145,9 @@ class ClientOutputThread extends Thread {
                     wait();
                 }
                 catch (Exception e) {
-                    e.printStackTrace();
+                    if (running) {
+                        e.printStackTrace();
+                    }
                 }
 
                 try {
@@ -135,7 +155,9 @@ class ClientOutputThread extends Thread {
                     outputStream.flush();
                 }
                 catch (Exception e) {
-                    e.printStackTrace();
+                    if (running) {
+                        e.printStackTrace();
+                    }
                     return;
                 }
                 message = "";
