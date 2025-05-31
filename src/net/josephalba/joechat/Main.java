@@ -4,7 +4,7 @@ import javax.swing.*;
 
 public class Main {
     public static final int PORT = 8046;
-    public static final String VERSION = "v0.4.0";
+    public static final String VERSION = "v0.4.1";
 
     public static void main(String[] args) {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {

@@ -1,6 +1,5 @@
 package net.josephalba.joechat;
 
-import javax.swing.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.InetSocketAddress;
@@ -42,7 +41,7 @@ public class Client extends Thread {
         }
 
         inputThread = new ClientInputThread(gui, socket, username, address);
-        outputThread = new ClientOutputThread(gui, socket);
+        outputThread = new ClientOutputThread(socket);
         inputThread.start();
         outputThread.start();
 
@@ -61,7 +60,6 @@ public class Client extends Thread {
 
 class ClientInputThread extends Thread {
     private final Socket socket;
-    public String received;
     public Gui gui;
 
     public ClientInputThread(Gui gui, Socket socket, String username, String address) {
@@ -79,9 +77,12 @@ class ClientInputThread extends Thread {
         }
 
         synchronized (gui) {
+            String timestamp;
+            String message;
             while (true) {
                 try {
-                    received = inputStream.readUTF();
+                    timestamp = inputStream.readUTF();
+                    message = inputStream.readUTF();
                 }
                 catch (Exception e) {
                     gui.showError("Lost connection to server");
@@ -90,21 +91,14 @@ class ClientInputThread extends Thread {
                 }
 
                 if (!gui.headless) {
-                    String timestampString = received.substring(0, received.indexOf("Z") + 1);
-                    Instant timestamp = Instant.parse(timestampString);
-                    ZonedDateTime zonedTimestamp = ZonedDateTime.ofInstant(timestamp, ZoneId.systemDefault());
+                    ZonedDateTime zonedTimestamp = ZonedDateTime.ofInstant(Instant.parse(timestamp), ZoneId.systemDefault());
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                     String formattedTimestamp = formatter.format(zonedTimestamp);
 
-                    String messageContent = received.substring(received.indexOf("Z") + 1);
-                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(messageContent);
+                    // Non-blocking spaces are used here so line wrapping can utilize more space
+                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(message);
 
-                    JTextArea textArea = gui.textArea;
-                    String text = textArea.getText();
-                    text = text.concat("\n");
-                    text = text.concat(formattedMessage);
-                    textArea.setText(text);
-                    textArea.setCaretPosition(textArea.getDocument().getLength());
+                    gui.updateChatMessages(formattedMessage);
                 }
             }
         }
@@ -114,10 +108,8 @@ class ClientInputThread extends Thread {
 class ClientOutputThread extends Thread {
     private final Socket socket;
     public String message = "";
-    private final Gui gui;
 
-    public ClientOutputThread(Gui gui, Socket socket) {
-        this.gui = gui;
+    public ClientOutputThread(Socket socket) {
         this.socket = socket;
     }
 

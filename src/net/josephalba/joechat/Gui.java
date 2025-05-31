@@ -9,8 +9,8 @@ import java.awt.event.MouseEvent;
 
 public class Gui {
     public final boolean headless;
-    public JTextArea textArea;
     private JFrame frame;
+    private JTextPane chatPane;
 
     public Gui(String version, boolean headless) {
         this.headless = headless;
@@ -157,27 +157,33 @@ public class Gui {
             messageBox.setBounds(150, 400, 400, 50);
             messageBox.addActionListener(e -> {
                 synchronized (client.outputThread) {
-                    client.outputThread.message = client.username + " #" + client.id + ": " + messageBox.getText();
+                    // Non-blocking spaces are used here so line wrapping can utilize more space
+                    client.outputThread.message = client.username + " #" + client.id + ": " + messageBox.getText();
                     client.outputThread.notify();
                 }
                 messageBox.setText("");
             });
             frame.add(messageBox);
 
-            textArea = new JTextArea();
-            textArea.setEditable(false);
-            textArea.setLineWrap(true);
-            textArea.setWrapStyleWord(true);
+            chatPane = new JTextPane();
+            chatPane.setEditable(false);
 
-            JScrollPane scrollPane = new JScrollPane(textArea);
+            JScrollPane scrollPane = new JScrollPane(chatPane);
             scrollPane.setBounds(150, 50, 400, 300);
 
-            frame.getContentPane().setLayout(null);
             frame.getContentPane().add(scrollPane);
 
             updateFrame();
 
         });
+    }
+
+    public void updateChatMessages(String message) {
+        String text = chatPane.getText();
+        text = text.concat(message);
+        text = text.concat("\n");
+        chatPane.setText(text);
+        chatPane.setCaretPosition(chatPane.getDocument().getLength());
     }
 
     public void showError(String error) {

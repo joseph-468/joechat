@@ -4,9 +4,6 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class Server extends Thread {
@@ -113,10 +110,10 @@ class ServerOutputThread extends Thread {
                     e.printStackTrace();
                 }
 
-                Instant currentTime = Instant.now();
-                message = currentTime.toString().concat(message);
+                String timestamp = Instant.now().toString();
 
                 try {
+                    outputStream.writeUTF(timestamp);
                     outputStream.writeUTF(message);
                     outputStream.flush();
                 }
