@@ -13,10 +13,9 @@ public class Client extends Thread {
     public final String username;
     public final String address;
     public Socket socket;
-    public ClientOutputThread outputThread;
-    public ClientInputThread inputThread;
     public Gui gui;
-    public int id;
+    ClientOutputThread outputThread;
+    ClientInputThread inputThread;
 
     public Client(Gui gui, String username, String address) {
         this.gui = gui;
@@ -30,18 +29,19 @@ public class Client extends Thread {
                       System.getProperty("os.arch") +
                       System.getProperty("user.name") +
                       System.getProperty("java.version");
-        id = Math.abs(temp.hashCode());
+        int userId = Math.abs(temp.hashCode());
 
         socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(address, Main.PORT), 250); // Timeout in ms
         } catch (Exception e) {
             gui.showError("Could not connect to server");
+            close();
             return;
         }
 
-        inputThread = new ClientInputThread(gui, socket, username, address);
-        outputThread = new ClientOutputThread(socket);
+        inputThread = new ClientInputThread(gui, socket, username, this, address);
+        outputThread = new ClientOutputThread(socket, userId, username, this);
         inputThread.start();
         outputThread.start();
 
@@ -58,26 +58,34 @@ public class Client extends Thread {
     }
 
     public void close() {
-        inputThread.running = false;
-        try {
-            socket.close();
+        if (inputThread != null) {
+            inputThread.running = false;
         }
-        catch (Exception e) {
-            e.printStackTrace();
+        if (!socket.isClosed()) {
+            try {
+                socket.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        outputThread.running = false;
-        outputThread.interrupt();
+        if (outputThread != null) {
+            outputThread.running = false;
+            outputThread.interrupt();
+        }
     }
 }
 
 class ClientInputThread extends Thread {
     private final Socket socket;
+    private final Client client;
     public Gui gui;
     public volatile boolean running;
 
-    public ClientInputThread(Gui gui, Socket socket, String username, String address) {
+    public ClientInputThread(Gui gui, Socket socket, String username, Client client, String address) {
         this.gui = gui;
         this.socket = socket;
+        this.client = client;
     }
 
     public void run() {
@@ -91,11 +99,15 @@ class ClientInputThread extends Thread {
         }
 
         synchronized (gui) {
+            int id;
             String timestamp;
+            String username;
             String message;
             while (true) {
                 try {
+                    id = inputStream.readInt();
                     timestamp = inputStream.readUTF();
+                    username = inputStream.readUTF();
                     message = inputStream.readUTF();
                 }
                 catch (Exception e) {
@@ -103,6 +115,7 @@ class ClientInputThread extends Thread {
                         gui.showError("Lost connection to server");
                         e.printStackTrace();
                     }
+                    client.close();
                     return;
                 }
 
@@ -110,8 +123,7 @@ class ClientInputThread extends Thread {
                     ZonedDateTime zonedTimestamp = ZonedDateTime.ofInstant(Instant.parse(timestamp), ZoneId.systemDefault());
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                     String formattedTimestamp = formatter.format(zonedTimestamp);
-
-                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(message);
+                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(username).concat(" #").concat(Integer.toString(id)).concat(": ").concat(message);
 
                     gui.updateChatMessages(formattedMessage);
                 }
@@ -122,11 +134,17 @@ class ClientInputThread extends Thread {
 
 class ClientOutputThread extends Thread {
     private final Socket socket;
+    private final int userId;
+    private final String username;
+    private final Client client;
     public String message = "";
     public volatile boolean running;
 
-    public ClientOutputThread(Socket socket) {
+    public ClientOutputThread(Socket socket, int userId, String username, Client client) {
         this.socket = socket;
+        this.userId = userId;
+        this.username = username;
+        this.client = client;
     }
 
     public void run() {
@@ -137,6 +155,15 @@ class ClientOutputThread extends Thread {
         }
         catch (Exception e) {
             throw new RuntimeException(e);
+        }
+
+        try {
+            outputStream.writeInt(userId);
+            outputStream.writeUTF(username);
+        }
+        catch (Exception e) {
+            client.close();
+            return;
         }
 
         synchronized (this) {
@@ -158,6 +185,7 @@ class ClientOutputThread extends Thread {
                     if (running) {
                         e.printStackTrace();
                     }
+                    client.close();
                     return;
                 }
                 message = "";

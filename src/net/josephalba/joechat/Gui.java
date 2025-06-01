@@ -178,7 +178,7 @@ public class Gui {
 
             messageBox.addActionListener(e -> {
                 synchronized (client.outputThread) {
-                    client.outputThread.message = client.username + " " + client.id + ": " + messageBox.getText();
+                    client.outputThread.message = messageBox.getText();
                     client.outputThread.notify();
                 }
                 messageBox.setText("");
@@ -191,8 +191,7 @@ public class Gui {
             chatSendButton.setFont(chatSendButton.getFont().deriveFont(Font.BOLD));
             chatSendButton.addActionListener(e -> {
                 synchronized (client.outputThread) {
-                    // Non-blocking spaces are used here so line wrapping can utilize more space
-                    client.outputThread.message = client.username + " #" + client.id + ": " + messageBox.getText();
+                    client.outputThread.message = messageBox.getText();
                     client.outputThread.notify();
                 }
                 messageBox.setText("");

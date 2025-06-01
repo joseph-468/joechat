@@ -5,10 +5,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Server extends Thread {
     public ArrayList<ServerInputThread> inputThreads = new ArrayList<>();
     public ArrayList<ServerOutputThread> outputThreads = new ArrayList<>();
+    public HashMap<String, Integer> users;
     public Gui gui;
 
     Server(Gui gui) {
@@ -34,8 +36,9 @@ public class Server extends Thread {
                 gui.showError("Failed to accept connection");
                 return;
             }
+
             ServerInputThread inputThread = new ServerInputThread(gui, this, socket);
-            ServerOutputThread outputThread = new ServerOutputThread(gui, this, socket);
+            ServerOutputThread outputThread = new ServerOutputThread(this, socket);
             inputThreads.add(inputThread);
             outputThreads.add(outputThread);
             inputThread.start();
@@ -64,6 +67,24 @@ class ServerInputThread extends Thread {
             throw new RuntimeException(e);
         }
 
+        int userId;
+        String username;
+        try {
+            userId = inputStream.readInt();
+            username = inputStream.readUTF();
+        }
+        catch (Exception e) {
+            synchronized(server) {
+                int i = server.inputThreads.indexOf(this);
+                if (i != -1) {
+                    server.inputThreads.remove(i);
+                    server.outputThreads.remove(i);
+                }
+            }
+            e.printStackTrace();
+            return;
+        }
+
         String message;
         while (true) {
             try {
@@ -82,6 +103,8 @@ class ServerInputThread extends Thread {
             }
             for (ServerOutputThread outputThread : server.outputThreads) {
                 synchronized (outputThread) {
+                    outputThread.userId = userId;
+                    outputThread.username = username;
                     outputThread.message = message;
                     outputThread.notify();
                 }
@@ -93,11 +116,11 @@ class ServerInputThread extends Thread {
 class ServerOutputThread extends Thread {
     private DataOutputStream outputStream;
     private final Server server;
-    public String message = "";
-    private final Gui gui;
+    public int userId;
+    public String username;
+    public String message;
 
-    ServerOutputThread(Gui gui, Server server, Socket socket) {
-        this.gui = gui;
+    ServerOutputThread(Server server, Socket socket) {
         this.server = server;
 
         try {
@@ -121,7 +144,9 @@ class ServerOutputThread extends Thread {
                 String timestamp = Instant.now().toString();
 
                 try {
+                    outputStream.writeInt(userId);
                     outputStream.writeUTF(timestamp);
+                    outputStream.writeUTF(username);
                     outputStream.writeUTF(message);
                     outputStream.flush();
                 }
