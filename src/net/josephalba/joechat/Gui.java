@@ -18,6 +18,10 @@ public class Gui {
             server.start();
             return;
         }
+
+        JPanel content = new JPanel();
+        content.setPreferredSize(new Dimension(800, 600));
+
         frame = new JFrame("JoeChat " + version);
         // Default look and feel is acceptable if this fails
         try {
@@ -35,9 +39,10 @@ public class Gui {
         });
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
+        frame.setContentPane(content);
         frame.setResizable(false);
         frame.setLayout(null);
+        frame.pack();
         frame.setVisible(true);
         startMainMenu();
     }
@@ -155,7 +160,7 @@ public class Gui {
             resetFrame();
 
             JButton exitButton = new JButton("Exit");
-            exitButton.setBounds(5, 5, 80, 40);
+            exitButton.setBounds(5, 5, 85, 40);
             exitButton.addActionListener(e -> {
                 client.close();
                 startMainMenu();
@@ -168,7 +173,7 @@ public class Gui {
             frame.add(addressLabel);
 
             JTextField messageBox = new JTextField();
-            messageBox.setBounds(2, 520, 700, 40);
+            messageBox.setBounds(5, 555, 700, 40);
             messageBox.setBorder(BorderFactory.createLineBorder(Color.GRAY));
 
             // By requesting focus typing always goes into the message box
@@ -189,7 +194,7 @@ public class Gui {
             messageBox.requestFocusInWindow();
 
             JButton chatSendButton = new JButton("Send");
-            chatSendButton.setBounds(702, 520, 80, 40);
+            chatSendButton.setBounds(710, 555, 85, 40);
             chatSendButton.setFont(chatSendButton.getFont().deriveFont(Font.BOLD));
             chatSendButton.addActionListener(e -> {
                 synchronized (client.outputThread) {
@@ -203,12 +208,13 @@ public class Gui {
             chatPane = new JTextPane();
             chatPane.setEditable(false);
             chatPane.setHighlighter(null);
+            chatPane.setBorder(null);
 
             JScrollPane chatScrollPane = new JScrollPane(chatPane);
-            chatScrollPane.setBounds(0, 50, 800, 470);
+            chatScrollPane.setBounds(0, 50, 800, 500);
             chatScrollPane.setBorder(null);
-            chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-            chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+            chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
             frame.getContentPane().add(chatScrollPane);
 
