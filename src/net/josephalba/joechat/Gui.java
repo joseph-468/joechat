@@ -6,11 +6,13 @@ import java.awt.event.*;
 
 public class Gui {
     public final boolean headless;
+    public final boolean secure;
     private JFrame frame;
     private JTextPane chatPane;
 
-    public Gui(String version, boolean headless) {
+    public Gui(String version, boolean headless, boolean secure) {
         this.headless = headless;
+        this.secure = secure;
         if (headless) {
             Server server = new Server(this);
             server.start();

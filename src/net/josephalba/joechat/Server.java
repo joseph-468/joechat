@@ -5,12 +5,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Server extends Thread {
     public ArrayList<ServerInputThread> inputThreads = new ArrayList<>();
     public ArrayList<ServerOutputThread> outputThreads = new ArrayList<>();
-    public HashMap<String, Integer> users;
+    public ArrayList<Integer> userIds = new ArrayList<>();
+    public ArrayList<String> usernames = new ArrayList<>();
     public Gui gui;
 
     Server(Gui gui) {
@@ -85,6 +85,28 @@ class ServerInputThread extends Thread {
             return;
         }
 
+        synchronized (server) {
+            if (gui.secure && (server.usernames.contains(username) || server.userIds.contains(userId))) {
+                int i = server.inputThreads.indexOf(this);
+                if (i != -1) {
+                    if (!socket.isClosed()) {
+                        try {
+                            socket.close();
+                        }
+                        catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    server.inputThreads.remove(i);
+                    server.outputThreads.remove(i);
+                }
+                return;
+            }
+
+            server.usernames.add(username);
+            server.userIds.add((Integer) userId);
+        }
+
         String message;
         while (true) {
             try {
@@ -94,6 +116,8 @@ class ServerInputThread extends Thread {
                 synchronized(server) {
                     int i = server.inputThreads.indexOf(this);
                     if (i != -1) {
+                        server.usernames.remove(username);
+                        server.userIds.remove((Integer) userId);
                         server.inputThreads.remove(i);
                         server.outputThreads.remove(i);
                     }
@@ -154,6 +178,8 @@ class ServerOutputThread extends Thread {
                     synchronized(server) {
                         int i = server.inputThreads.indexOf(this);
                         if (i != -1) {
+                            server.usernames.remove(username);
+                            server.userIds.remove((Integer) userId);
                             server.inputThreads.remove(i);
                             server.outputThreads.remove(i);
                         }

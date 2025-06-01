@@ -29,12 +29,13 @@ public class Client extends Thread {
                       System.getProperty("os.arch") +
                       System.getProperty("user.name") +
                       System.getProperty("java.version");
-        int userId = Math.abs(temp.hashCode());
+        int userId = temp.hashCode();
 
         socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(address, Main.PORT), 250); // Timeout in ms
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             gui.showError("Could not connect to server");
             close();
             return;
@@ -123,7 +124,7 @@ class ClientInputThread extends Thread {
                     ZonedDateTime zonedTimestamp = ZonedDateTime.ofInstant(Instant.parse(timestamp), ZoneId.systemDefault());
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                     String formattedTimestamp = formatter.format(zonedTimestamp);
-                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(username).concat(" #").concat(Integer.toString(id)).concat(": ").concat(message);
+                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(username).concat(": ").concat(message);
 
                     gui.updateChatMessages(formattedMessage);
                 }
@@ -162,6 +163,9 @@ class ClientOutputThread extends Thread {
             outputStream.writeUTF(username);
         }
         catch (Exception e) {
+            if (running) {
+                client.gui.showError("Could not connect to server");
+            }
             client.close();
             return;
         }
@@ -184,6 +188,7 @@ class ClientOutputThread extends Thread {
                 catch (Exception e) {
                     if (running) {
                         e.printStackTrace();
+                        client.gui.showError("Lost connection to server");
                     }
                     client.close();
                     return;

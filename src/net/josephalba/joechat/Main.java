@@ -4,7 +4,7 @@ import javax.swing.*;
 
 public class Main {
     public static final int PORT = 8046;
-    public static final String VERSION = "v0.7.0";
+    public static final String VERSION = "v0.8.0";
 
     public static void main(String[] args) {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
@@ -13,28 +13,31 @@ public class Main {
             System.exit(1);
         });
 
+        boolean headless = false;
+        boolean secure = false;
         for (String arg : args) {
             switch (arg) {
                 case "--help" -> {
                     System.out.println("I don't know how to help");
                     return;
                 }
-                case "--headless" -> {
-                    SwingUtilities.invokeLater(() -> {
-                        Gui gui = new Gui(VERSION, true);
-                        while (true) {}
-                    });
-                    return;
-                }
                 case "--version" -> {
                     System.out.println(VERSION);
                     return;
                 }
+                case "--headless" -> {
+                    headless = true;
+                }
+                case "--secure" -> {
+                    secure = true;
+                }
             }
         }
 
+        boolean finalHeadless = headless;
+        boolean finalSecure = secure;
         SwingUtilities.invokeLater(() -> {
-            Gui gui = new Gui(VERSION, false);
+            Gui gui = new Gui(VERSION, finalHeadless, finalSecure);
         });
     }
 }
