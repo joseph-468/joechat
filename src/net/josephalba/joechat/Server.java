@@ -105,6 +105,15 @@ class ServerInputThread extends Thread {
 
             server.usernames.add(username);
             server.userIds.add((Integer) userId);
+
+            for (ServerOutputThread outputThread : server.outputThreads) {
+                synchronized (outputThread) {
+                    outputThread.userId = 0;
+                    outputThread.username = "SERVER";
+                    outputThread.message = username.concat(" has entered the chat!\n");
+                    outputThread.notify();
+                }
+            }
         }
 
         String message;
@@ -120,17 +129,28 @@ class ServerInputThread extends Thread {
                         server.userIds.remove((Integer) userId);
                         server.inputThreads.remove(i);
                         server.outputThreads.remove(i);
+
+                        for (ServerOutputThread outputThread : server.outputThreads) {
+                            synchronized (outputThread) {
+                                outputThread.userId = 0;
+                                outputThread.username = "SERVER";
+                                outputThread.message = username.concat(" has left the chat :(\n");
+                                outputThread.notify();
+                            }
+                        }
                     }
                 }
                 e.printStackTrace();
                 return;
             }
-            for (ServerOutputThread outputThread : server.outputThreads) {
-                synchronized (outputThread) {
-                    outputThread.userId = userId;
-                    outputThread.username = username;
-                    outputThread.message = message;
-                    outputThread.notify();
+            synchronized (server) {
+                for (ServerOutputThread outputThread : server.outputThreads) {
+                    synchronized (outputThread) {
+                        outputThread.userId = userId;
+                        outputThread.username = username;
+                        outputThread.message = message;
+                        outputThread.notify();
+                    }
                 }
             }
         }
@@ -182,6 +202,15 @@ class ServerOutputThread extends Thread {
                             server.userIds.remove((Integer) userId);
                             server.inputThreads.remove(i);
                             server.outputThreads.remove(i);
+
+                            for (ServerOutputThread outputThread : server.outputThreads) {
+                                synchronized (outputThread) {
+                                    outputThread.userId = 0;
+                                    outputThread.username = "SERVER";
+                                    outputThread.message = username.concat(" has left the chat :(\n");
+                                    outputThread.notify();
+                                }
+                            }
                         }
                     }
                     e.printStackTrace();

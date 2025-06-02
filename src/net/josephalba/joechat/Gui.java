@@ -79,19 +79,6 @@ public class Gui {
         SwingUtilities.invokeLater(() -> {
             resetFrame();
 
-            JButton testButton = new JButton("Send message to all clients");
-            testButton.setBounds(150, 150, 200, 50);
-            testButton.addActionListener(e -> {
-                for (ServerOutputThread outputThread : server.outputThreads) {
-                    synchronized (outputThread) {
-                        outputThread.message = "Test message";
-                        outputThread.notify();
-                    }
-                }
-
-            });
-            frame.add(testButton);
-
             updateFrame();
         });
     }
@@ -141,6 +128,10 @@ public class Gui {
             connectButton.setBounds(300, 300, 200, 50);
             connectButton.addActionListener(e -> {
                 String username = usernameField.getText();
+                if (username.equals("SERVER")) {
+                    showError("Nice try");
+                    return;
+                }
                 if (username.length() < 4 || username.length() > 12) {
                     showError("Username must be between 4 and 12 characters");
                     return;
@@ -204,11 +195,7 @@ public class Gui {
 
             frame.add(chatSendButton);
 
-            chatPane = new JTextPane() {
-                public boolean getScrollableTracksViewportWidth() {
-                    return true;
-                }
-            };
+            chatPane = new JTextPane();
             chatPane.setEditable(false);
             chatPane.setHighlighter(null);
             chatPane.setBorder(null);
@@ -229,10 +216,13 @@ public class Gui {
     }
 
     public void updateChatMessages(String message) {
-        String text = chatPane.getText();
-        text = text.concat(message);
-        chatPane.setText(text);
-        chatPane.setCaretPosition(chatPane.getDocument().getLength());
+        if (headless) return;
+        SwingUtilities.invokeLater(() -> {
+            String text = chatPane.getText();
+            text = text.concat(message);
+            chatPane.setText(text);
+            chatPane.setCaretPosition(chatPane.getDocument().getLength());
+        });
     }
 
     public void showError(String error) {
@@ -254,26 +244,29 @@ public class Gui {
     }
 
     private void sendMessage(Client client, JTextField messageBox) {
-        String messageContent = messageBox.getText();
-        if (messageContent.isEmpty() || messageContent.length() > 200) return;
+        if (headless) return;
+        SwingUtilities.invokeLater(() -> {
+            String messageContent = messageBox.getText();
+            if (messageContent.isEmpty() || messageContent.length() > 200) return;
 
-        ArrayList<String> messageLines = new ArrayList<>();
-        for (int i = 0; i < messageContent.length(); i += lineWrapThreshold) {
-            messageLines.add(messageContent.substring(i, Math.min((i + lineWrapThreshold), messageContent.length())));
-        }
+            ArrayList<String> messageLines = new ArrayList<>();
+            for (int i = 0; i < messageContent.length(); i += lineWrapThreshold) {
+                messageLines.add(messageContent.substring(i, Math.min((i + lineWrapThreshold), messageContent.length())));
+            }
 
-        StringBuilder formattedMessage = new StringBuilder();
-        for (int i = 0; i < messageLines.size(); i++) {
-            if (i > 0) formattedMessage.append("                      ");
-            formattedMessage.append(messageLines.get(i));
-            formattedMessage.append("\n");
-        }
+            StringBuilder formattedMessage = new StringBuilder();
+            for (int i = 0; i < messageLines.size(); i++) {
+                if (i > 0) formattedMessage.append("                      ");
+                formattedMessage.append(messageLines.get(i));
+                formattedMessage.append("\n");
+            }
 
-        synchronized (client.outputThread) {
-            client.outputThread.message = formattedMessage.toString();
-            client.outputThread.notify();
-        }
-        messageBox.setText("");
+            synchronized (client.outputThread) {
+                client.outputThread.message = formattedMessage.toString();
+                client.outputThread.notify();
+            }
+            messageBox.setText("");
+        });
     }
 
     private void setDefaultFont(String name, int style, int size) {
