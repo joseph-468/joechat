@@ -111,8 +111,8 @@ public class Gui {
             JLabel addressLabel = new JLabel("Server IP address");
             addressLabel.setBounds(450, 150, 200, 50);
             addressLabel.setHorizontalAlignment(JLabel.CENTER);
-            JTextField addressField = new JTextField("localhost");
-            addressField.putClientProperty("defaultText", "localhost");
+            JTextField addressField = new JTextField("josephalba.net");
+            addressField.putClientProperty("defaultText", "josephalba.net");
             addressField.setBounds(450, 200, 200, 50);
             addressField.addFocusListener(removeTextOnFocus);
 
