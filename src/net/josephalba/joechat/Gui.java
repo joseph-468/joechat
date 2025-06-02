@@ -3,12 +3,14 @@ package net.josephalba.joechat;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 
 public class Gui {
     public final boolean headless;
     public final boolean secure;
     private JFrame frame;
     private JTextPane chatPane;
+    private int lineWrapThreshold;
 
     public Gui(String version, boolean headless, boolean secure) {
         this.headless = headless;
@@ -139,7 +141,10 @@ public class Gui {
             connectButton.setBounds(300, 300, 200, 50);
             connectButton.addActionListener(e -> {
                 String username = usernameField.getText();
-                if (username.isEmpty() || username.length() > 16) return;
+                if (username.length() < 4 || username.length() > 12) {
+                    showError("Username must be between 4 and 12 characters");
+                    return;
+                }
                 Client client = new Client(this, username, addressField.getText());
                 client.start();
             });
@@ -184,12 +189,9 @@ public class Gui {
             });
 
             messageBox.addActionListener(e -> {
-                synchronized (client.outputThread) {
-                    client.outputThread.message = messageBox.getText();
-                    client.outputThread.notify();
-                }
-                messageBox.setText("");
+                sendMessage(client, messageBox);
             });
+
             frame.add(messageBox);
             messageBox.requestFocusInWindow();
 
@@ -197,26 +199,30 @@ public class Gui {
             chatSendButton.setBounds(710, 555, 85, 40);
             chatSendButton.setFont(chatSendButton.getFont().deriveFont(Font.BOLD));
             chatSendButton.addActionListener(e -> {
-                synchronized (client.outputThread) {
-                    client.outputThread.message = messageBox.getText();
-                    client.outputThread.notify();
-                }
-                messageBox.setText("");
+                sendMessage(client, messageBox);
             });
+
             frame.add(chatSendButton);
 
-            chatPane = new JTextPane();
+            chatPane = new JTextPane() {
+                public boolean getScrollableTracksViewportWidth() {
+                    return true;
+                }
+            };
             chatPane.setEditable(false);
             chatPane.setHighlighter(null);
             chatPane.setBorder(null);
 
+            int chatWidth = 800;
             JScrollPane chatScrollPane = new JScrollPane(chatPane);
-            chatScrollPane.setBounds(0, 50, 800, 500);
+            chatScrollPane.setBounds(0, 50, chatWidth + 20, 500);
             chatScrollPane.setBorder(null);
             chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
             chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
             frame.getContentPane().add(chatScrollPane);
+
+            lineWrapThreshold = calculateLineWrapThreshold(chatWidth);
 
             updateFrame();
         });
@@ -225,7 +231,6 @@ public class Gui {
     public void updateChatMessages(String message) {
         String text = chatPane.getText();
         text = text.concat(message);
-        text = text.concat("\n");
         chatPane.setText(text);
         chatPane.setCaretPosition(chatPane.getDocument().getLength());
     }
@@ -237,7 +242,7 @@ public class Gui {
 
             JButton errorButton = new JButton("ERROR: " + error);
             errorButton.setBounds(200, 175,  400, 100);
-            Font errorFont = new Font(errorButton.getFont().getFontName(), Font.BOLD, 14);
+            Font errorFont = new Font(errorButton.getFont().getFontName(), Font.BOLD, 12);
             errorButton.setFont(errorFont);
             errorButton.addActionListener(e -> {
                 startMainMenu();
@@ -246,6 +251,29 @@ public class Gui {
 
             updateFrame();
         });
+    }
+
+    private void sendMessage(Client client, JTextField messageBox) {
+        String messageContent = messageBox.getText();
+        if (messageContent.isEmpty() || messageContent.length() > 200) return;
+
+        ArrayList<String> messageLines = new ArrayList<>();
+        for (int i = 0; i < messageContent.length(); i += lineWrapThreshold) {
+            messageLines.add(messageContent.substring(i, Math.min((i + lineWrapThreshold), messageContent.length())));
+        }
+
+        StringBuilder formattedMessage = new StringBuilder();
+        for (int i = 0; i < messageLines.size(); i++) {
+            if (i > 0) formattedMessage.append("                      ");
+            formattedMessage.append(messageLines.get(i));
+            formattedMessage.append("\n");
+        }
+
+        synchronized (client.outputThread) {
+            client.outputThread.message = formattedMessage.toString();
+            client.outputThread.notify();
+        }
+        messageBox.setText("");
     }
 
     private void setDefaultFont(String name, int style, int size) {
@@ -257,6 +285,12 @@ public class Gui {
         UIManager.put("Label.font", font);
     }
 
+    private int calculateLineWrapThreshold(int chatWidth) {
+        FontMetrics fontMetrics = chatPane.getFontMetrics(chatPane.getFont());
+        int charWidth = fontMetrics.charWidth(' ');
+        int reservedSpace = 22;
+        return chatWidth / charWidth - reservedSpace;
+    }
 
     private void resetFrame() {
         frame.getContentPane().removeAll();

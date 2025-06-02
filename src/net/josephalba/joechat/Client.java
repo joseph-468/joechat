@@ -124,7 +124,8 @@ class ClientInputThread extends Thread {
                     ZonedDateTime zonedTimestamp = ZonedDateTime.ofInstant(Instant.parse(timestamp), ZoneId.systemDefault());
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
                     String formattedTimestamp = formatter.format(zonedTimestamp);
-                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(username).concat(": ").concat(message);
+                    String formattedUsername = String.format("%12s", username);
+                    String formattedMessage = "[".concat(formattedTimestamp).concat("] ").concat(formattedUsername).concat(": ").concat(message);
 
                     gui.updateChatMessages(formattedMessage);
                 }
